@@ -326,7 +326,7 @@
   </div>
 
   <p class="rule">신체 접촉 미션은 상대방의 동의를 먼저 받아주세요.</p>
-  <p class="count">질문 17개 · 미션 10개</p>
+  <p class="count">질문 17개 · 미션 10개 · 초기화 전까지 중복 없음</p>
 </main>
 
 <script>
@@ -377,9 +377,19 @@ const drawBtn = document.getElementById("drawBtn");
 let state = "idle";
 let holdTimer = null;
 let timers = [];
-let lastPair = "";
+let usedQuestions = new Set();
+let usedMissions = new Set();
 
 const rand = n => Math.floor(Math.random()*n);
+
+function getUnusedIndex(length, usedSet){
+  const available = [];
+  for(let i = 0; i < length; i++){
+    if(!usedSet.has(i)) available.push(i);
+  }
+  if(available.length === 0) return -1;
+  return available[rand(available.length)];
+}
 
 const later = (fn, ms) => {
   const id = setTimeout(fn, ms);
@@ -414,6 +424,32 @@ function renderIdle(){
 
 function draw(){
   clearTimers();
+
+  if(usedQuestions.size >= questions.length || usedMissions.size >= missions.length){
+    state = "done";
+    idle.style.display = "none";
+    result.style.display = "";
+    qrow.className = "roulette-row question-row";
+    mrow.className = "roulette-row mission-row";
+    divider.className = "divider";
+
+    if(usedQuestions.size >= questions.length){
+      questionText.textContent = "모든 질문을 사용했어요";
+    } else {
+      questionText.textContent = `${questions.length - usedQuestions.size}개의 질문이 남아 있어요`;
+    }
+
+    if(usedMissions.size >= missions.length){
+      missionText.textContent = "모든 미션을 사용했어요. 초기화해주세요!";
+    } else {
+      missionText.textContent = `${missions.length - usedMissions.size}개의 미션이 남아 있어요`;
+    }
+
+    drawBtn.disabled = true;
+    resetBtn.disabled = false;
+    return;
+  }
+
   state = "target";
 
   idle.style.display = "none";
@@ -425,19 +461,27 @@ function draw(){
   mrow.className = "roulette-row mission-row waiting";
   divider.className = "divider waiting";
 
-  let q = rand(questions.length);
+  let q = getUnusedIndex(questions.length, usedQuestions);
   questionText.textContent = questions[q];
   missionText.textContent = "다음 룰렛을 기다리는 중…";
 
   const qSpin = every(() => {
-    q = rand(questions.length);
-    questionText.textContent = questions[q];
+    const nextQ = getUnusedIndex(questions.length, usedQuestions);
+    if(nextQ !== -1){
+      q = nextQ;
+      questionText.textContent = questions[q];
+    }
   }, 75);
 
   later(() => {
     clearInterval(qSpin);
 
-    q = rand(questions.length);
+    q = getUnusedIndex(questions.length, usedQuestions);
+    if(q === -1){
+      draw();
+      return;
+    }
+    usedQuestions.add(q);
     questionText.textContent = questions[q];
     qrow.className = "roulette-row question-row";
 
@@ -445,29 +489,39 @@ function draw(){
     mrow.className = "roulette-row mission-row spinning";
     divider.className = "divider";
 
-    let m = rand(missions.length);
+    let m = getUnusedIndex(missions.length, usedMissions);
     missionText.textContent = missions[m];
 
     const mSpin = every(() => {
-      m = rand(missions.length);
-      missionText.textContent = missions[m];
+      const nextM = getUnusedIndex(missions.length, usedMissions);
+      if(nextM !== -1){
+        m = nextM;
+        missionText.textContent = missions[m];
+      }
     }, 75);
 
     later(() => {
       clearInterval(mSpin);
 
-      m = rand(missions.length);
-      while (`${q}-${m}` === lastPair) {
-        m = rand(missions.length);
+      m = getUnusedIndex(missions.length, usedMissions);
+      if(m === -1){
+        draw();
+        return;
       }
-
-      lastPair = `${q}-${m}`;
+      usedMissions.add(m);
       missionText.textContent = missions[m];
       mrow.className = "roulette-row mission-row";
 
       state = "done";
-      drawBtn.disabled = false;
       resetBtn.disabled = false;
+
+      if(usedQuestions.size >= questions.length || usedMissions.size >= missions.length){
+        drawBtn.disabled = true;
+        drawBtn.textContent = "모두 사용 완료";
+      } else {
+        drawBtn.disabled = false;
+        drawBtn.textContent = `다시 뽑기 ↻`;
+      }
     }, 900);
   }, 900);
 }
@@ -514,6 +568,9 @@ card.addEventListener("keyup", e => {
 resetBtn.addEventListener("click", () => {
   clearTimers();
   cancelHold();
+  usedQuestions.clear();
+  usedMissions.clear();
+  drawBtn.textContent = "다시 뽑기 ↻";
   renderIdle();
 });
 
