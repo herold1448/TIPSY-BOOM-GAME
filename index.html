@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>폭탄 미션</title>
+<style>
+  :root{
+    --bg:#0a0a0b;
+    --panel:#141416;
+    --panel2:#1c1c20;
+    --text:#ffffff;
+    --muted:#a9a9b2;
+    --line:rgba(255,255,255,.12);
+    --question:#ffb347;
+    --mission:#ff5a5f;
+  }
+
+  *{box-sizing:border-box}
+
+  html,body{
+    margin:0;
+    min-height:100%;
+    background:
+      radial-gradient(circle at 15% 10%,rgba(255,179,71,.10),transparent 28%),
+      radial-gradient(circle at 85% 90%,rgba(255,90,95,.11),transparent 30%),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",system-ui,sans-serif;
+  }
+
+  body{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+
+  .game{
+    width:min(640px,100%);
+  }
+
+  header{
+    text-align:center;
+    margin-bottom:18px;
+  }
+
+  h1{
+    margin:0 0 8px;
+    font-size:36px;
+    font-weight:900;
+    letter-spacing:-1.5px;
+  }
+
+  header p{
+    margin:0;
+    color:var(--muted);
+    font-size:15px;
+    font-weight:600;
+  }
+
+  .mission-card{
+    position:relative;
+    min-height:510px;
+    padding:24px;
+    border-radius:30px;
+    background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015)),var(--panel);
+    border:1px solid var(--line);
+    box-shadow:0 26px 80px rgba(0,0,0,.45);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:manipulation;
+    overflow:hidden;
+  }
+
+  .bomb{
+    font-size:72px;
+    line-height:1;
+    margin-bottom:18px;
+    filter:drop-shadow(0 10px 24px rgba(255,90,95,.28));
+  }
+
+  .placeholder{
+    width:100%;
+    text-align:center;
+  }
+
+  .placeholder .ready{
+    display:inline-flex;
+    padding:7px 12px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    color:#d7d7dd;
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:1.6px;
+  }
+
+  .placeholder p{
+    margin:18px 0 8px;
+    font-size:32px;
+    font-weight:900;
+    letter-spacing:-1px;
+  }
+
+  .hold-hint{
+    color:var(--muted);
+    font-size:14px;
+    font-weight:600;
+  }
+
+  .hold-track{
+    display:block;
+    width:220px;
+    height:8px;
+    margin:20px auto 0;
+    background:rgba(255,255,255,.09);
+    border-radius:999px;
+    overflow:hidden;
+  }
+
+  .hold-track > span{
+    display:block;
+    width:0;
+    height:100%;
+    background:linear-gradient(90deg,var(--question),var(--mission));
+  }
+
+  .is-holding .hold-track > span{
+    animation:hold .7s linear forwards;
+  }
+
+  @keyframes hold{to{width:100%}}
+
+  .roulette-result{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  .roulette-row{
+    position:relative;
+    padding:24px 20px 26px;
+    border-radius:24px;
+    border:1px solid var(--line);
+    background:var(--panel2);
+    text-align:center;
+  }
+
+  .question-row{
+    box-shadow:inset 0 0 0 1px rgba(255,179,71,.14);
+  }
+
+  .mission-row{
+    box-shadow:inset 0 0 0 1px rgba(255,90,95,.14);
+  }
+
+  .step-label{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:112px;
+    padding:7px 12px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:1.6px;
+    margin-bottom:14px;
+  }
+
+  .question-row .step-label{
+    color:var(--question);
+    background:rgba(255,179,71,.10);
+    border:1px solid rgba(255,179,71,.20);
+  }
+
+  .mission-row .step-label{
+    color:#ff7b7f;
+    background:rgba(255,90,95,.11);
+    border:1px solid rgba(255,90,95,.22);
+  }
+
+  .roulette-row p{
+    margin:0;
+    color:#fff;
+    font-weight:900;
+    letter-spacing:-.8px;
+    line-height:1.42;
+    word-break:keep-all;
+    text-wrap:balance;
+  }
+
+  .question-row p{
+    font-size:31px;
+  }
+
+  .mission-row p{
+    font-size:34px;
+  }
+
+  .question-prefix{
+    display:block;
+    color:#c8c8cf;
+    font-size:15px;
+    font-weight:800;
+    margin-bottom:8px;
+  }
+
+  .divider{
+    height:1px;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);
+  }
+
+  .spinning{
+    animation:pulse .15s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse{
+    from{transform:scale(.992);opacity:.70}
+    to{transform:scale(1.008);opacity:1}
+  }
+
+  .waiting{
+    opacity:.34;
+  }
+
+  .controls{
+    display:grid;
+    grid-template-columns:1fr 1.35fr;
+    gap:10px;
+    margin-top:14px;
+  }
+
+  button{
+    border:0;
+    border-radius:17px;
+    padding:16px 18px;
+    font-size:16px;
+    font-weight:900;
+    cursor:pointer;
+  }
+
+  button:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+  }
+
+  .reset{
+    background:#1d1d22;
+    color:#efeff2;
+    border:1px solid var(--line);
+  }
+
+  .draw{
+    background:linear-gradient(135deg,#ffb347,#ff5a5f);
+    color:#111;
+  }
+
+  .rule{
+    margin:14px 0 0;
+    text-align:center;
+    color:#8b8b94;
+    font-size:12px;
+    font-weight:600;
+  }
+
+  .count{
+    margin:7px 0 0;
+    text-align:center;
+    color:#67676f;
+    font-size:11px;
+  }
+
+  @media(max-width:500px){
+    body{padding:14px}
+    h1{font-size:31px}
+    .mission-card{min-height:470px;padding:18px}
+    .question-row p{font-size:26px}
+    .mission-row p{font-size:29px}
+    .roulette-row{padding:22px 16px 24px}
+  }
+</style>
+</head>
+<body>
+<main class="game">
+  <header>
+    <h1>폭탄 미션 💣</h1>
+    <p>질문 룰렛 → 미션 룰렛</p>
+  </header>
+
+  <section id="card" class="mission-card" role="button" tabindex="0" aria-live="polite">
+    <div class="bomb">💣</div>
+
+    <div id="idle" class="placeholder">
+      <span class="ready">READY?</span>
+      <p>꾹 눌러주세요!</p>
+      <span class="hold-hint">0.7초 동안 길게 누르기</span>
+      <span class="hold-track"><span></span></span>
+    </div>
+
+    <div id="result" class="roulette-result" style="display:none">
+      <div id="qrow" class="roulette-row question-row">
+        <span class="step-label">QUESTION</span>
+        <span class="question-prefix">여기서 이 사람에게 👇</span>
+        <p id="questionText"></p>
+      </div>
+
+      <div id="divider" class="divider"></div>
+
+      <div id="mrow" class="roulette-row mission-row">
+        <span class="step-label">MISSION</span>
+        <p id="missionText">다음 룰렛을 기다리는 중…</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="controls">
+    <button id="resetBtn" class="reset" type="button">초기화</button>
+    <button id="drawBtn" class="draw" type="button">다시 뽑기 ↻</button>
+  </div>
+
+  <p class="rule">신체 접촉 미션은 상대방의 동의를 먼저 받아주세요.</p>
+  <p class="count">질문 17개 · 미션 10개</p>
+</main>
+
+<script>
+const questions = [
+  "결혼을 가장 늦게 할 것 같은 사람",
+  "오늘 가장 인기가 많을 것 같은 사람",
+  "무인도에 단둘이 가도 살아남을 것 같은 사람",
+  "오늘 가장 친해지고 싶은 사람",
+  "오늘 패션에 가장 신경 쓴 것 같은 사람",
+  "가장 예쁘거나 잘생겼다고 생각하는 사람",
+  "플러팅을 가장 잘할 것 같은 사람",
+  "꼬시면 넘어올 것 같은 사람",
+  "파티가 끝난 뒤 따로 연락해보고 싶은 사람",
+  "오늘 집에 돌아간 뒤 가장 생각날 것 같은 사람",
+  "알고 보면 반전 매력이 가장 클 것 같은 사람",
+  "부모님께 소개하면 가장 좋아하실 것 같은 사람",
+  "썸을 가장 많이 타봤을 것 같은 사람",
+  "다음 파티에도 같이 오고 싶은 사람",
+  "오늘 끝나고 가장 더 얘기해보고 싶은 사람",
+  "알고 보면 제일 또라이일 것 같은 사람",
+  "하루 동안 몸이 바뀌어도 괜찮을 것 같은 사람"
+];
+
+const missions = [
+  "가볍게 머리 쓰다듬기",
+  "하이파이브하기",
+  "건배하기",
+  "3초 동안 눈 마주치기",
+  "가위바위보 한 판 하기",
+  "주먹 인사하기",
+  "손가락 하트 보내기",
+  "윙크 한 번 하기",
+  "꽃받침 포즈 해주기",
+  "볼하트 하기"
+];
+
+const card = document.getElementById("card");
+const idle = document.getElementById("idle");
+const result = document.getElementById("result");
+const qrow = document.getElementById("qrow");
+const mrow = document.getElementById("mrow");
+const divider = document.getElementById("divider");
+const questionText = document.getElementById("questionText");
+const missionText = document.getElementById("missionText");
+const resetBtn = document.getElementById("resetBtn");
+const drawBtn = document.getElementById("drawBtn");
+
+let state = "idle";
+let holdTimer = null;
+let timers = [];
+let lastPair = "";
+
+const rand = n => Math.floor(Math.random()*n);
+
+const later = (fn, ms) => {
+  const id = setTimeout(fn, ms);
+  timers.push(id);
+  return id;
+};
+
+const every = (fn, ms) => {
+  const id = setInterval(fn, ms);
+  timers.push(id);
+  return id;
+};
+
+function clearTimers(){
+  timers.forEach(id => {
+    clearTimeout(id);
+    clearInterval(id);
+  });
+  timers = [];
+}
+
+function renderIdle(){
+  state = "idle";
+  idle.style.display = "";
+  result.style.display = "none";
+  qrow.className = "roulette-row question-row";
+  mrow.className = "roulette-row mission-row";
+  divider.className = "divider";
+  drawBtn.disabled = false;
+  resetBtn.disabled = false;
+}
+
+function draw(){
+  clearTimers();
+  state = "target";
+
+  idle.style.display = "none";
+  result.style.display = "";
+  drawBtn.disabled = true;
+  resetBtn.disabled = true;
+
+  qrow.className = "roulette-row question-row spinning";
+  mrow.className = "roulette-row mission-row waiting";
+  divider.className = "divider waiting";
+
+  let q = rand(questions.length);
+  questionText.textContent = questions[q];
+  missionText.textContent = "다음 룰렛을 기다리는 중…";
+
+  const qSpin = every(() => {
+    q = rand(questions.length);
+    questionText.textContent = questions[q];
+  }, 75);
+
+  later(() => {
+    clearInterval(qSpin);
+
+    q = rand(questions.length);
+    questionText.textContent = questions[q];
+    qrow.className = "roulette-row question-row";
+
+    state = "mission";
+    mrow.className = "roulette-row mission-row spinning";
+    divider.className = "divider";
+
+    let m = rand(missions.length);
+    missionText.textContent = missions[m];
+
+    const mSpin = every(() => {
+      m = rand(missions.length);
+      missionText.textContent = missions[m];
+    }, 75);
+
+    later(() => {
+      clearInterval(mSpin);
+
+      m = rand(missions.length);
+      while (`${q}-${m}` === lastPair) {
+        m = rand(missions.length);
+      }
+
+      lastPair = `${q}-${m}`;
+      missionText.textContent = missions[m];
+      mrow.className = "roulette-row mission-row";
+
+      state = "done";
+      drawBtn.disabled = false;
+      resetBtn.disabled = false;
+    }, 900);
+  }, 900);
+}
+
+function startHold(){
+  if(state !== "idle" || holdTimer) return;
+
+  card.classList.add("is-holding");
+
+  holdTimer = setTimeout(() => {
+    holdTimer = null;
+    card.classList.remove("is-holding");
+    draw();
+  }, 700);
+}
+
+function cancelHold(){
+  if(holdTimer){
+    clearTimeout(holdTimer);
+    holdTimer = null;
+  }
+  card.classList.remove("is-holding");
+}
+
+card.addEventListener("pointerdown", startHold);
+card.addEventListener("pointerup", cancelHold);
+card.addEventListener("pointercancel", cancelHold);
+card.addEventListener("pointerleave", cancelHold);
+
+card.addEventListener("keydown", e => {
+  if((e.key === "Enter" || e.key === " ") && !e.repeat){
+    e.preventDefault();
+    startHold();
+  }
+});
+
+card.addEventListener("keyup", e => {
+  if(e.key === "Enter" || e.key === " "){
+    e.preventDefault();
+    cancelHold();
+  }
+});
+
+resetBtn.addEventListener("click", () => {
+  clearTimers();
+  cancelHold();
+  renderIdle();
+});
+
+drawBtn.addEventListener("click", () => {
+  if(state !== "target" && state !== "mission") {
+    draw();
+  }
+});
+
+renderIdle();
+</script>
+</body>
+</html>
